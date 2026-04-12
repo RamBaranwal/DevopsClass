@@ -7,6 +7,7 @@ app.get('/', async(req , res)=>{
     res.send(`
         <h1>Welcome to my server</h1>
         <h2>name: Dhruva Mahehswari the  goat </h2>
+        <p>paajii </p>
         `)
 })
 
