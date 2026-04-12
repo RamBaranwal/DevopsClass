@@ -22,4 +22,4 @@ jobs:
 
     - name: push docker image to DockerHub
       run: docker push rambaranwal/devops-test:latest
-
+      
