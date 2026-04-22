@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Snake Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #2c3e50;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin-top: 50px;
+        }
+        canvas {
+            background-color: #34495e;
+            border: 2px solid #ecf0f1;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        #score {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake & Fruit Game</h1>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+        
+        let snake = [{x: 10, y: 10}];
+        let food = {x: 15, y: 15};
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+        let gameOver = false;
+        
+        document.addEventListener("keydown", changeDirection);
+        
+        function main() {
+            if (hasGameEnded()) {
+                gameOver = true;
+                ctx.fillStyle = "white";
+                ctx.font = "30px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("Game Over!", canvas.width / 2, canvas.height / 2 - 15);
+                ctx.font = "20px Arial";
+                ctx.fillText("Press Space to Restart", canvas.width / 2, canvas.height / 2 + 25);
+                return;
+            }
+            
+            setTimeout(function onTick() {
+                clearCanvas();
+                drawFood();
+                advanceSnake();
+                drawSnake();
+                main();
+            }, 150); // Increased timeout to decrease speed
+        }
+        
+        function clearCanvas() {
+            ctx.fillStyle = "#34495e";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        function drawFood() {
+            ctx.font = "18px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🍎", food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2);
+        }
+        
+        function drawSnake() {
+            ctx.textBaseline = "middle";
+            ctx.textAlign = "center";
+            snake.forEach((part, index) => {
+                if (index === 0) {
+                    ctx.font = "18px Arial";
+                    ctx.fillText("🐍", part.x * gridSize + gridSize/2, part.y * gridSize + gridSize/2);
+                } else {
+                    ctx.fillStyle = "#2ecc71";
+                    ctx.beginPath();
+                    ctx.arc(part.x * gridSize + gridSize/2, part.y * gridSize + gridSize/2, gridSize/2 - 2, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.strokeStyle = "#27ae60";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            });
+        }
+        
+        function advanceSnake() {
+            if (dx === 0 && dy === 0) return; // Wait for first key press
+            
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            snake.unshift(head);
+            
+            const didEatFood = head.x === food.x && head.y === food.y;
+            if (didEatFood) {
+                score += 10;
+                document.getElementById('score').innerText = 'Score: ' + score;
+                generateFood();
+            } else {
+                snake.pop();
+            }
+        }
+        
+        function generateFood() {
+            food.x = Math.floor(Math.random() * tileCount);
+            food.y = Math.floor(Math.random() * tileCount);
+            snake.forEach(function has_snake_eaten_food(part) {
+                if (part.x === food.x && part.y === food.y) generateFood();
+            });
+        }
+        
+        function changeDirection(event) {
+            const LEFT_KEY = 37;
+            const RIGHT_KEY = 39;
+            const UP_KEY = 38;
+            const DOWN_KEY = 40;
+            const SPACE_KEY = 32;
+            
+            const keyPressed = event.keyCode;
+            
+            if (keyPressed === SPACE_KEY) {
+                if (gameOver) {
+                    restartGame();
+                }
+                event.preventDefault(); // Prevent page scroll when pressing space
+                return; 
+            }
+            
+            // Prevent default scrolling for arrow keys as well
+            if ([37, 38, 39, 40].includes(keyPressed)) {
+                event.preventDefault();
+            }
+            
+            const goingUp = dy === -1;
+            const goingDown = dy === 1;
+            const goingRight = dx === 1;
+            const goingLeft = dx === -1;
+            
+            if (keyPressed === LEFT_KEY && !goingRight) { dx = -1; dy = 0; }
+            if (keyPressed === UP_KEY && !goingDown) { dx = 0; dy = -1; }
+            if (keyPressed === RIGHT_KEY && !goingLeft) { dx = 1; dy = 0; }
+            if (keyPressed === DOWN_KEY && !goingUp) { dx = 0; dy = 1; }
+        }
+        
+        function hasGameEnded() {
+            for (let i = 4; i < snake.length; i++) {
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+            }
+            return snake[0].x < 0 || snake[0].x >= tileCount || snake[0].y < 0 || snake[0].y >= tileCount;
+        }
+        
+        function restartGame() {
+            snake = [{x: 10, y: 10}];
+            dx = 0;
+            dy = 0;
+            score = 0;
+            gameOver = false;
+            document.getElementById('score').innerText = 'Score: ' + score;
+            generateFood();
+            main();
+        }
+        
+        generateFood();
+        main();
+    </script>
+</body>
+</html>
