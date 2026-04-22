@@ -21,6 +21,10 @@ jobs:
           username: ${{secrets.EC2_USERNAME}}
           key: ${{ secrets.EC2_PRIVATE_KEY}}
           script: |
-            sudo docker pull rambaranwal/devops-test:latest
-            sudo docker rm -f devops-test || true
-            sudo docker run -d -p 5000:3000 --name devops-test rambaranwal/devops-test:latest
+            sudo docker pull rambaranwal/devops-test-backend:latest
+            sudo docker pull rambaranwal/devops-test-frontend:latest
+            sudo docker rm -f devops-test-backend || true
+            sudo docker rm -f devops-test-frontend || true
+            sudo docker network create devops-network || true
+            sudo docker run -d -p 5000:3000 --name devops-test-backend --network devops-network rambaranwal/devops-test-backend:latest
+            sudo docker run -d -p 80:80 --name devops-test-frontend --network devops-network rambaranwal/devops-test-frontend:latest
