@@ -152,26 +152,44 @@ function App() {
 
   return (
     <div className="game-container">
-      <h1>Snake & Fruit Game</h1>
+      <h1 className="game-title">Snake & Fruit Game</h1>
       <div className="score">Score: {score}</div>
-      <canvas 
-        ref={canvasRef} 
-        width={400} 
-        height={400} 
-        className="game-canvas"
-      />
-      {gameOver && (
-        <button className="restart-btn" onClick={restartGame}>Restart Game</button>
-      )}
-      <div className="controls">
-        <div className="control-row">
-          <button className="control-btn" onPointerDown={(e) => { e.preventDefault(); handleDirection('UP'); }}>⬆️</button>
-        </div>
-        <div className="control-row">
-          <button className="control-btn" onPointerDown={(e) => { e.preventDefault(); handleDirection('LEFT'); }}>⬅️</button>
-          <button className="control-btn" onPointerDown={(e) => { e.preventDefault(); handleDirection('DOWN'); }}>⬇️</button>
-          <button className="control-btn" onPointerDown={(e) => { e.preventDefault(); handleDirection('RIGHT'); }}>➡️</button>
-        </div>
+      
+      <div className="canvas-wrapper">
+        <canvas 
+          ref={canvasRef} 
+          width={400} 
+          height={400} 
+          className="game-canvas"
+        />
+        {gameOver && (
+          <div className="game-over-overlay">
+            <button className="restart-btn" onClick={restartGame}>Restart Game</button>
+          </div>
+        )}
+      </div>
+
+      <div className="controls-wrapper">
+        <button 
+          className="dpad-btn dpad-up" 
+          onPointerDown={(e) => { e.preventDefault(); handleDirection('UP'); }}>
+          ▲
+        </button>
+        <button 
+          className="dpad-btn dpad-left" 
+          onPointerDown={(e) => { e.preventDefault(); handleDirection('LEFT'); }}>
+          ◄
+        </button>
+        <button 
+          className="dpad-btn dpad-right" 
+          onPointerDown={(e) => { e.preventDefault(); handleDirection('RIGHT'); }}>
+          ►
+        </button>
+        <button 
+          className="dpad-btn dpad-down" 
+          onPointerDown={(e) => { e.preventDefault(); handleDirection('DOWN'); }}>
+          ▼
+        </button>
       </div>
     </div>
   );
