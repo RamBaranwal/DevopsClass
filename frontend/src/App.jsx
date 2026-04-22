@@ -29,9 +29,29 @@ function App() {
     return newFood;
   }, []);
 
+  const restartGame = () => {
+    setSnake([{ x: 10, y: 10 }]);
+    setDir({ dx: 0, dy: 0 });
+    setScore(0);
+    setGameOver(false);
+    setFood(generateFood([{ x: 10, y: 10 }]));
+  };
+
+  const handleDirection = useCallback((newDir) => {
+    const { dx, dy } = stateRef.current.dir;
+    const isUp = dy === -1;
+    const isDown = dy === 1;
+    const isLeft = dx === -1;
+    const isRight = dx === 1;
+
+    if (newDir === 'UP' && !isDown) setDir({ dx: 0, dy: -1 });
+    if (newDir === 'DOWN' && !isUp) setDir({ dx: 0, dy: 1 });
+    if (newDir === 'LEFT' && !isRight) setDir({ dx: -1, dy: 0 });
+    if (newDir === 'RIGHT' && !isLeft) setDir({ dx: 1, dy: 0 });
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      const { dx, dy } = stateRef.current.dir;
       const go = stateRef.current.gameOver;
       
       if (e.keyCode === 32) { // Space
@@ -41,31 +61,18 @@ function App() {
       }
       
       if ([37, 38, 39, 40].includes(e.keyCode)) {
-        e.preventDefault();
+        e.preventDefault(); // Prevent page scroll
       }
-      
-      const isUp = dy === -1;
-      const isDown = dy === 1;
-      const isLeft = dx === -1;
-      const isRight = dx === 1;
 
-      if (e.keyCode === 37 && !isRight) setDir({ dx: -1, dy: 0 });
-      if (e.keyCode === 38 && !isDown) setDir({ dx: 0, dy: -1 });
-      if (e.keyCode === 39 && !isLeft) setDir({ dx: 1, dy: 0 });
-      if (e.keyCode === 40 && !isUp) setDir({ dx: 0, dy: 1 });
+      if (e.keyCode === 37) handleDirection('LEFT');
+      if (e.keyCode === 38) handleDirection('UP');
+      if (e.keyCode === 39) handleDirection('RIGHT');
+      if (e.keyCode === 40) handleDirection('DOWN');
     };
     
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const restartGame = () => {
-    setSnake([{ x: 10, y: 10 }]);
-    setDir({ dx: 0, dy: 0 });
-    setScore(0);
-    setGameOver(false);
-    setFood(generateFood([{ x: 10, y: 10 }]));
-  };
+  }, [handleDirection]);
 
   useEffect(() => {
     const loop = setInterval(() => {
@@ -132,12 +139,14 @@ function App() {
     });
     
     if (gameOver) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "white";
       ctx.font = "30px Arial";
       ctx.textAlign = "center";
       ctx.fillText("Game Over!", canvas.width / 2, canvas.height / 2 - 15);
       ctx.font = "20px Arial";
-      ctx.fillText("Press Space to Restart", canvas.width / 2, canvas.height / 2 + 25);
+      ctx.fillText("Tap Restart", canvas.width / 2, canvas.height / 2 + 25);
     }
   }, [snake, food, gameOver]);
 
@@ -151,6 +160,19 @@ function App() {
         height={400} 
         className="game-canvas"
       />
+      {gameOver && (
+        <button className="restart-btn" onClick={restartGame}>Restart Game</button>
+      )}
+      <div className="controls">
+        <div className="control-row">
+          <button className="control-btn" onPointerDown={(e) => { e.preventDefault(); handleDirection('UP'); }}>⬆️</button>
+        </div>
+        <div className="control-row">
+          <button className="control-btn" onPointerDown={(e) => { e.preventDefault(); handleDirection('LEFT'); }}>⬅️</button>
+          <button className="control-btn" onPointerDown={(e) => { e.preventDefault(); handleDirection('DOWN'); }}>⬇️</button>
+          <button className="control-btn" onPointerDown={(e) => { e.preventDefault(); handleDirection('RIGHT'); }}>➡️</button>
+        </div>
+      </div>
     </div>
   );
 }
