@@ -1,121 +1,158 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import './App.css';
+
+const GRID_SIZE = 20;
+const TILE_COUNT = 20;
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [snake, setSnake] = useState([{ x: 10, y: 10 }]);
+  const [food, setFood] = useState({ x: 15, y: 15 });
+  const [dir, setDir] = useState({ dx: 0, dy: 0 });
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const canvasRef = useRef(null);
+  
+  const stateRef = useRef({ snake, food, dir, gameOver, score });
+  
+  useEffect(() => {
+    stateRef.current = { snake, food, dir, gameOver, score };
+  }, [snake, food, dir, gameOver, score]);
+
+  const generateFood = useCallback((currentSnake) => {
+    let newFood = { x: 15, y: 15 };
+    while (true) {
+      newFood.x = Math.floor(Math.random() * TILE_COUNT);
+      newFood.y = Math.floor(Math.random() * TILE_COUNT);
+      let collision = currentSnake.some(part => part.x === newFood.x && part.y === newFood.y);
+      if (!collision) break;
+    }
+    return newFood;
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const { dx, dy } = stateRef.current.dir;
+      const go = stateRef.current.gameOver;
+      
+      if (e.keyCode === 32) { // Space
+        if (go) restartGame();
+        e.preventDefault();
+        return;
+      }
+      
+      if ([37, 38, 39, 40].includes(e.keyCode)) {
+        e.preventDefault();
+      }
+      
+      const isUp = dy === -1;
+      const isDown = dy === 1;
+      const isLeft = dx === -1;
+      const isRight = dx === 1;
+
+      if (e.keyCode === 37 && !isRight) setDir({ dx: -1, dy: 0 });
+      if (e.keyCode === 38 && !isDown) setDir({ dx: 0, dy: -1 });
+      if (e.keyCode === 39 && !isLeft) setDir({ dx: 1, dy: 0 });
+      if (e.keyCode === 40 && !isUp) setDir({ dx: 0, dy: 1 });
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const restartGame = () => {
+    setSnake([{ x: 10, y: 10 }]);
+    setDir({ dx: 0, dy: 0 });
+    setScore(0);
+    setGameOver(false);
+    setFood(generateFood([{ x: 10, y: 10 }]));
+  };
+
+  useEffect(() => {
+    const loop = setInterval(() => {
+      const { snake, food, dir, gameOver, score } = stateRef.current;
+      
+      if (gameOver) return;
+      if (dir.dx === 0 && dir.dy === 0) return;
+      
+      const head = { x: snake[0].x + dir.dx, y: snake[0].y + dir.dy };
+      
+      const hitWall = head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT;
+      const hitSelf = snake.some((part, i) => i !== 0 && part.x === head.x && part.y === head.y);
+      
+      if (hitWall || hitSelf) {
+        setGameOver(true);
+        return;
+      }
+      
+      const newSnake = [head, ...snake];
+      let newScore = score;
+      let newFood = food;
+      
+      if (head.x === food.x && head.y === food.y) {
+        newScore += 10;
+        newFood = generateFood(newSnake);
+      } else {
+        newSnake.pop();
+      }
+      
+      setSnake(newSnake);
+      setFood(newFood);
+      setScore(newScore);
+    }, 150);
+    
+    return () => clearInterval(loop);
+  }, [generateFood]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#34495e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.font = "18px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🍎", food.x * GRID_SIZE + GRID_SIZE/2, food.y * GRID_SIZE + GRID_SIZE/2);
+    
+    snake.forEach((part, index) => {
+      if (index === 0) {
+        ctx.font = "18px Arial";
+        ctx.fillText("🐍", part.x * GRID_SIZE + GRID_SIZE/2, part.y * GRID_SIZE + GRID_SIZE/2);
+      } else {
+        ctx.fillStyle = "#2ecc71";
+        ctx.beginPath();
+        ctx.arc(part.x * GRID_SIZE + GRID_SIZE/2, part.y * GRID_SIZE + GRID_SIZE/2, GRID_SIZE/2 - 2, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.strokeStyle = "#27ae60";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    });
+    
+    if (gameOver) {
+      ctx.fillStyle = "white";
+      ctx.font = "30px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Game Over!", canvas.width / 2, canvas.height / 2 - 15);
+      ctx.font = "20px Arial";
+      ctx.fillText("Press Space to Restart", canvas.width / 2, canvas.height / 2 + 25);
+    }
+  }, [snake, food, gameOver]);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    <div className="game-container">
+      <h1>Snake & Fruit Game</h1>
+      <div className="score">Score: {score}</div>
+      <canvas 
+        ref={canvasRef} 
+        width={400} 
+        height={400} 
+        className="game-canvas"
+      />
+    </div>
+  );
 }
 
-export default App
+export default App;
